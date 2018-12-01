@@ -55,6 +55,14 @@ func authMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("origin"))
+		next.ServeHTTP(w, r)
+	})
+}
+
 func handleWebsocket(w http.ResponseWriter, r *http.Request) {
 	l := log.WithField("remoteaddr", r.RemoteAddr)
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -154,12 +162,19 @@ func handleWebsocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handleHealthCheck (w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte("{\"alive\":\"yes\"}"))
+}
+
 func main() {
 
 	r := mux.NewRouter()
 
+	r.Use(corsMiddleware)
 	r.Use(authMiddleware)
 	r.HandleFunc("/term", handleWebsocket)
+	r.HandleFunc("/healthcheck", handleHealthCheck)
 	// unix socket
 	unixSocket := UNIXSOCKET
 
