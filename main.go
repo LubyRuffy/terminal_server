@@ -65,6 +65,8 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 func handleWebsocket(w http.ResponseWriter, r *http.Request) {
 	l := log.WithField("remoteaddr", r.RemoteAddr)
+	// in general unsafe, but we used a token before
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		l.WithError(err).Error("Unable to upgrade connection")
